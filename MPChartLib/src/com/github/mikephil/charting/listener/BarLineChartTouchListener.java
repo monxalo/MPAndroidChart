@@ -150,25 +150,26 @@ public class BarLineChartTouchListener extends ChartTouchListener<BarLineChartBa
                     // determine the touch-pointer center
                     midPoint(mTouchPointCenter, event);
                 }
+
                 break;
             case MotionEvent.ACTION_MOVE:
 
                 if (mTouchMode == DRAG) {
-
                     mChart.disableScroll();
                     performDrag(event);
 
                 } else if (mTouchMode == X_ZOOM || mTouchMode == Y_ZOOM || mTouchMode == PINCH_ZOOM) {
-
                     mChart.disableScroll();
 
-                    if (mChart.isScaleXEnabled() || mChart.isScaleYEnabled())
+                    if (mChart.isScaleXEnabled() || mChart.isScaleYEnabled()) {
                         performZoom(event);
+                    } else {
+                        performDoubleHighlightDrag(event);
+                    }
 
                 } else if (mTouchMode == NONE
                         && Math.abs(distance(event.getX(), mTouchStartPoint.x, event.getY(),
                         mTouchStartPoint.y)) > mDragTriggerDist) {
-
                     if (mChart.hasNoDragOffset()) {
 
                         if (!mChart.isFullyZoomedOut() && mChart.isDragEnabled()) {
@@ -186,6 +187,7 @@ public class BarLineChartTouchListener extends ChartTouchListener<BarLineChartBa
                         mTouchMode = DRAG;
                     }
                 }
+
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -251,6 +253,26 @@ public class BarLineChartTouchListener extends ChartTouchListener<BarLineChartBa
         mMatrix = mChart.getViewPortHandler().refresh(mMatrix, mChart, true);
 
         return true; // indicate event was handled
+    }
+
+    private void performDoubleHighlightDrag(MotionEvent event) {
+        float firstPointX = event.getX(0);
+        float firstPointY = event.getY(0);
+
+        Highlight first = mChart.getHighlightByTouchPoint(firstPointX, firstPointY);
+
+        float secondPointX = event.getX(1);
+        float secondPointY = event.getY(1);
+
+        Highlight second = mChart.getHighlightByTouchPoint(secondPointX, secondPointY);
+
+        if(first != null && second == null) {
+            mChart.highlightMultiple(new Highlight[] { first });
+        } else if(second != null && first == null) {
+            mChart.highlightMultiple(new Highlight[] { second });
+        } else if(first != null && second != null) {
+            mChart.highlightMultiple(new Highlight[] { first, second });
+        }
     }
 
     /**

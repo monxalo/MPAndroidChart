@@ -7,6 +7,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.drawable.Drawable;
 
+import android.os.Build;
+import android.util.Log;
 import com.github.mikephil.charting.animation.ChartAnimator;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.BarData;
@@ -22,6 +24,7 @@ import com.github.mikephil.charting.utils.Transformer;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 
 public class LineChartRenderer extends LineRadarRenderer {
@@ -707,6 +710,9 @@ public class LineChartRenderer extends LineRadarRenderer {
 
         LineData lineData = mChart.getLineData();
 
+        List<Path> paths = new ArrayList<>();
+        List<Integer> boundaries = new ArrayList<>();
+
         for (Highlight high : indices) {
 
             final int minDataSetIndex = high.getDataSetIndex() == -1
@@ -746,11 +752,38 @@ public class LineChartRenderer extends LineRadarRenderer {
 
                 mChart.getTransformer(set.getAxisDependency()).pointValuesToPixel(pts);
 
+                boundaries.add(high.getXIndex());
+
                 // draw the lines
-                drawHighlightLines(c, pts, set);
+                paths.add(drawHighlightLines(c, pts, set));
+
+                c.drawCircle(pts[0], pts[1], set.getCircleRadius(), mRenderPaint);
+            }
+        }
+
+        // Draw intersection and fill
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if(paths.size() > 1) {
+                paint.setColor(Color.parseColor("#FF0000"));
+                paint.setStrokeWidth(14f);
+                paint.setStyle(Paint.Style.STROKE);
+
+                Path path = generateFilledPath(lineData.getDataSetByIndex(0), boundaries.get(0),
+                    boundaries.get(1));
+
+                boolean success = path.op(paths.get(0), paths.get(1), Path.Op.INTERSECT);
+
+                //c.drawLine(50, 0, 50, mViewPortHandler.contentBottom(), paint);
+
+                Log.i("LineChartRenderer","Path.op: " + success);
+
+                c.drawPath(path, paint);
+                //c.drawPath(paths.get(1), paint);
             }
         }
     }
+
+    private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     /**
      * Sets the Bitmap.Config to be used by this renderer.

@@ -52,6 +52,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -612,12 +613,12 @@ public abstract class Chart<T extends ChartData<? extends IDataSet<? extends Ent
                 high = null;
             } else {
                 if (this instanceof BarLineChartBase
-                        && ((BarLineChartBase)this).isHighlightFullBarEnabled())
+                    && ((BarLineChartBase)this).isHighlightFullBarEnabled())
                     high = new Highlight(high.getXIndex(), Float.NaN, -1, -1, -1);
 
                 // set the indices to highlight
                 mIndicesToHighlight = new Highlight[]{
-                        high
+                    high
                 };
             }
         }
@@ -631,6 +632,21 @@ public abstract class Chart<T extends ChartData<? extends IDataSet<? extends Ent
                 mSelectionListener.onValueSelected(e, high.getDataSetIndex(), high);
             }
         }
+        // redraw the chart
+        invalidate();
+    }
+
+    public void highlightMultiple(Highlight[] high) {
+        if (high == null)
+            mIndicesToHighlight = null;
+        else {
+            if (mLogEnabled)
+                Log.i(LOG_TAG, "Highlighted: " + Arrays.asList(high));
+
+            // set the indices to highlight
+            mIndicesToHighlight = high;
+        }
+
         // redraw the chart
         invalidate();
     }

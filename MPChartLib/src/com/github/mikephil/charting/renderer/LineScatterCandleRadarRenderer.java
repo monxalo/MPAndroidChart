@@ -28,7 +28,8 @@ public abstract class LineScatterCandleRadarRenderer extends DataRenderer {
      * @param pts the transformed x- and y-position of the lines
      * @param set the currently drawn dataset
      */
-    protected void drawHighlightLines(Canvas c, float[] pts, ILineScatterCandleRadarDataSet set) {
+    protected Path drawHighlightLines(Canvas c, float[] pts, ILineScatterCandleRadarDataSet set) {
+        Path path = null;
 
         // set color and stroke-width
         mHighlightPaint.setColor(set.getHighLightColor());
@@ -45,6 +46,8 @@ public abstract class LineScatterCandleRadarRenderer extends DataRenderer {
             mHighlightLinePath.moveTo(pts[0], mViewPortHandler.contentTop());
             mHighlightLinePath.lineTo(pts[0], mViewPortHandler.contentBottom());
 
+            path = new Path(mHighlightLinePath);
+
             c.drawPath(mHighlightLinePath, mHighlightPaint);
         }
 
@@ -58,5 +61,7 @@ public abstract class LineScatterCandleRadarRenderer extends DataRenderer {
 
             c.drawPath(mHighlightLinePath, mHighlightPaint);
         }
+
+        return path;
     }
 }
