@@ -5,13 +5,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 
 import android.os.Build;
 import android.util.Log;
 import com.github.mikephil.charting.animation.ChartAnimator;
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -713,6 +713,8 @@ public class LineChartRenderer extends LineRadarRenderer {
         List<Path> paths = new ArrayList<>();
         List<Integer> boundaries = new ArrayList<>();
 
+        List<PointF> boundariesPoints = new ArrayList<>();
+
         for (Highlight high : indices) {
 
             final int minDataSetIndex = high.getDataSetIndex() == -1
@@ -758,27 +760,54 @@ public class LineChartRenderer extends LineRadarRenderer {
                 paths.add(drawHighlightLines(c, pts, set));
 
                 c.drawCircle(pts[0], pts[1], set.getCircleRadius(), mRenderPaint);
+
+                boundariesPoints.add(new PointF(pts[0], pts[1]));
             }
         }
 
         // Draw intersection and fill
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if(paths.size() > 1) {
-                paint.setColor(Color.parseColor("#FF0000"));
-                paint.setStrokeWidth(14f);
-                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(Color.parseColor("#2F4587F0"));
+                paint.setStyle(Paint.Style.FILL);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeJoin(Paint.Join.ROUND);
 
-                Path path = generateFilledPath(lineData.getDataSetByIndex(0), boundaries.get(0),
-                    boundaries.get(1));
+                ILineDataSet dataSet = lineData.getDataSetByIndex(0);
 
-                boolean success = path.op(paths.get(0), paths.get(1), Path.Op.INTERSECT);
+                Transformer transformer = mChart.getTransformer(dataSet.getAxisDependency());
 
-                //c.drawLine(50, 0, 50, mViewPortHandler.contentBottom(), paint);
+                Log.i("LineCharRenderer", "drawHighlighted: path for points: "
+                + boundaries.get(0) + ", " + boundaries.get(1));
 
-                Log.i("LineChartRenderer","Path.op: " + success);
+                int from = boundaries.get(0);
+                int to = boundaries.get(1);
 
-                c.drawPath(path, paint);
-                //c.drawPath(paths.get(1), paint);
+                Path filled = new Path();
+
+                filled.moveTo(boundariesPoints.get(0).x, mViewPortHandler.contentBottom());
+                filled.lineTo(boundariesPoints.get(0).x, boundariesPoints.get(0).y);
+
+                for (int x = from + 1; x < to; x++) {
+
+                    Entry e = dataSet.getEntryForIndex(x);
+
+                    float[] pts = new float[]{
+                        e.getXIndex(), dataSet.getYValForXIndex(x)
+                    };
+
+                    transformer.pointValuesToPixel(pts);
+
+                    filled.lineTo(pts[0], pts[1]);
+                }
+
+                // close up
+                filled.lineTo(boundariesPoints.get(1).x, boundariesPoints.get(1).y);
+                filled.lineTo(boundariesPoints.get(1).x, mViewPortHandler.contentBottom());
+
+                filled.close();
+
+                c.drawPath(filled, paint);
             }
         }
     }
